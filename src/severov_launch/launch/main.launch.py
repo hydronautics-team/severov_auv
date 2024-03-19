@@ -14,142 +14,89 @@ from launch_ros.actions import PushRosNamespace
 
 
 def generate_launch_description():
-    front_camera_topic_arg = DeclareLaunchArgument(
-        "front_camera_topic", default_value='/stingray/topics/front_camera'
+
+    # core
+    # hardware bridge
+    # topic names
+    driver_request_topic_arg = DeclareLaunchArgument(
+        "driver_request_topic", default_value='/stingray/topics/driver_request'
     )
-    front_camera_path_arg = DeclareLaunchArgument(
-        "front_camera_path", default_value='/dev/video0'
+    driver_response_topic_arg = DeclareLaunchArgument(
+        "driver_response_topic", default_value='/stingray/topics/driver_response'
     )
-    transition_srv_arg = DeclareLaunchArgument(
-        "transition_srv", default_value='/stingray/services/transition'
+    uv_state_topic_arg = DeclareLaunchArgument(
+        "uv_state_topic", default_value='/stingray/topics/uv_state'
     )
-    zbar_topic_arg = DeclareLaunchArgument(
-        "zbar_topic", default_value='/stingray/topics/zbar'
+    device_state_array_topic_arg = DeclareLaunchArgument(
+        "device_state_array_topic", default_value='/stingray/topics/device_state_array'
     )
-    twist_action_arg = DeclareLaunchArgument(
-        "twist_action", default_value='/stingray/actions/twist'
-    )
-    reset_imu_srv_arg = DeclareLaunchArgument(
-        "reset_imu_srv", default_value='/stingray/services/reset_imu'
+
+    # service names
+    set_twist_srv_arg = DeclareLaunchArgument(
+        "set_twist_srv", default_value='/stingray/services/set_twist'
     )
     set_stabilization_srv_arg = DeclareLaunchArgument(
         "set_stabilization_srv", default_value='/stingray/services/set_stabilization'
     )
-    send_to_ip_arg = DeclareLaunchArgument(
-        "send_to_ip", default_value='192.168.1.11'
+    reset_imu_srv_arg = DeclareLaunchArgument(
+        "reset_imu_srv", default_value='/stingray/services/reset_imu'
     )
-    send_to_port_arg = DeclareLaunchArgument(
-        "send_to_port", default_value='13053'
+    enable_thrusters_srv_arg = DeclareLaunchArgument(
+        "enable_thrusters_srv", default_value='/stingray/services/enable_thrusters'
     )
-    receive_from_ip_arg = DeclareLaunchArgument(
-        "receive_from_ip", default_value='192.168.1.173'
+    set_device_srv_arg = DeclareLaunchArgument(
+        "set_device_srv", default_value='/stingray/services/set_device'
     )
-    receive_from_port_arg = DeclareLaunchArgument(
-        "receive_from_port", default_value='13050'
+
+    # uart driver
+    device_arg = DeclareLaunchArgument(
+        "device", default_value="/dev/ttyTHS0"
     )
+    baudrate_arg = DeclareLaunchArgument(
+        "baudrate", default_value="115200"
+    )
+
     # load ros config
     return LaunchDescription([
-        front_camera_topic_arg,
-        front_camera_path_arg,
-        transition_srv_arg,
-        zbar_topic_arg,
-        twist_action_arg,
+        uv_state_topic_arg,
+        set_twist_srv_arg,
+        device_state_array_topic_arg,
         reset_imu_srv_arg,
         set_stabilization_srv_arg,
-        send_to_ip_arg,
-        send_to_port_arg,
-        receive_from_ip_arg,
-        receive_from_port_arg,
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(str(Path(
-        #         get_package_share_directory('stingray_core_launch'), 'auv.launch.py'))),
-        #     launch_arguments={
-        #         'transition_srv': LaunchConfiguration("transition_srv"),
-        #         'twist_action': LaunchConfiguration("twist_action"),
-        #         'reset_imu_srv': LaunchConfiguration("reset_imu_srv"),
-        #         'set_stabilization_srv': LaunchConfiguration("set_stabilization_srv"),
-        #         'zbar_topic': LaunchConfiguration("zbar_topic"),
-        #         'front_camera_topic': LaunchConfiguration("front_camera_topic"),
-        #     }.items(),
-        # ),
-        Node(
-            package='stingray_missions',
-            executable='fsm_node',
-            name='fsm_node',
-            parameters=[
-                {'transition_srv': LaunchConfiguration("transition_srv")},
-                {'twist_action': LaunchConfiguration("twist_action")},
-                {'reset_imu_srv': LaunchConfiguration("reset_imu_srv")},
-                {'set_stabilization_srv': LaunchConfiguration(
-                    "set_stabilization_srv")},
-            ],
-            respawn=True,
-            respawn_delay=1,
+        enable_thrusters_srv_arg,
+        set_device_srv_arg,
+        driver_request_topic_arg,
+        driver_response_topic_arg,
+        device_arg,
+        baudrate_arg,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(str(Path(
+                get_package_share_directory('sauvc_launch'), 'main.launch.py'))),
+            launch_arguments={
+                'uv_state_topic': LaunchConfiguration("uv_state_topic"),
+                'device_state_array_topic': LaunchConfiguration("device_state_array_topic"),
+                'set_twist_srv': LaunchConfiguration("set_twist_srv"),
+                'set_stabilization_srv': LaunchConfiguration("set_stabilization_srv"),
+                'reset_imu_srv': LaunchConfiguration("reset_imu_srv"),
+                'enable_thrusters_srv': LaunchConfiguration("enable_thrusters_srv"),
+                'set_device_srv': LaunchConfiguration("set_device_srv"),
+            }.items(),
         ),
-        Node(
-            package='stingray_movement',
-            executable='twist_action_server',
-            name='twist_action_server',
-            respawn=True,
-            respawn_delay=1,
-        ),
-        Node(
-            package='stingray_missions',
-            executable='qr_trigger_node',
-            name='qr_trigger_node',
-            parameters=[
-                {'transition_srv': LaunchConfiguration("transition_srv")},
-                {'zbar_topic': LaunchConfiguration("zbar_topic")}
-            ],
-            respawn=True,
-            respawn_delay=1,
-        ),
-        Node(
-            package='zbar_ros',
-            executable='barcode_reader',
-            name='qr_reader',
-            remappings=[
-                ('/image', LaunchConfiguration("front_camera_topic")),
-                ('/barcode', LaunchConfiguration("zbar_topic")),
-            ],
-            respawn=True,
-            respawn_delay=1,
-        ),
-        Node(
-            package='usb_cam',
-            executable='usb_cam_node_exe',
-            name='camera_driver',
-            remappings=[
-                ('/image_raw', LaunchConfiguration("front_camera_topic")),
-            ],
-            parameters=[
-                {'video_device': LaunchConfiguration("front_camera_path")},
-                # {'camera_name': "/front"},
-            ],
-            respawn=True,
-            respawn_delay=1,
-        ),
-        # Node(
-        #     package='rqt_gui',
-        #     executable='rqt_gui',
-        #     name='rqt_gui',
-        # ),
-        Node(
-            package='stingray_core_communication',
-            executable='hardware_bridge_node',
-            name='hardware_bridge_node',
-            respawn=True,
-            respawn_delay=0.5,
-        ),
-        Node(
-            package='stingray_core_communication',
-            executable='uart_driver_node',
-            name='uart_driver_node',
-            parameters=[
-                {'device': "/dev/ttyTHS0"},
-                {'baudrate': 115200},
-            ],
-            respawn=True,
-            respawn_delay=0.5,
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(str(Path(
+                get_package_share_directory('stingray_core_launch'), 'uart.launch.py'))),
+            launch_arguments={
+                'driver_request_topic': LaunchConfiguration("driver_request_topic"),
+                'driver_response_topic': LaunchConfiguration("driver_response_topic"),
+                'uv_state_topic': LaunchConfiguration("uv_state_topic"),
+                'device_state_array_topic': LaunchConfiguration("device_state_array_topic"),
+                'set_twist_srv': LaunchConfiguration("set_twist_srv"),
+                'set_stabilization_srv': LaunchConfiguration("set_stabilization_srv"),
+                'reset_imu_srv': LaunchConfiguration("reset_imu_srv"),
+                'enable_thrusters_srv': LaunchConfiguration("enable_thrusters_srv"),
+                'set_device_srv': LaunchConfiguration("set_device_srv"),
+                'device': LaunchConfiguration("device"),
+                'baudrate': LaunchConfiguration("baudrate"),
+            }.items(),
         ),
     ])
