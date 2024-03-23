@@ -46,14 +46,7 @@ RUN rosdep update
 RUN source /ws/additional_packages_ws/install/setup.bash &&  rosdep install --from-paths usb_cam --ignore-src -y
 RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && cd /ws/additional_packages_ws && colcon build"
 
-# RUN git clone -b iron https://github.com/ros-perception/image_pipeline.git
-# RUN mv image_pipeline/image_view/ .
-# RUN rm -r image_pipeline/
-
-
-# WORKDIR /ws/additional_packages_ws
-# RUN rosdep install --from-paths src --ignore-src -y
-# RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && cd /ws/additional_packages_ws && colcon build"
+RUN pip3 install ipython
 
 RUN echo 'source /ws/additional_packages_ws/install/setup.bash' >> /root/.bashrc
 
