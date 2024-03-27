@@ -1,0 +1,39 @@
+FROM dustynv/ros:iron-pytorch-l4t-r35.3.1@sha256:a9654040ebac8c21dc45c09a4b2f4e48937e0766c688f9b43a874fa4da443ca7
+
+RUN apt update && apt install -y --no-install-recommends git python3-pip
+
+RUN pip3 install tqdm
+RUN pip3 install pandas
+RUN pip3 install scipy
+RUN pip3 install pillow
+RUN pip3 install ipython
+RUN pip3 install seaborn
+RUN pip3 install matplotlib
+
+# deep sort dependencies
+# RUN pip3 install filterpy
+# RUN pip3 install scikit-image
+# RUN pip3 install lap
+
+WORKDIR /additional_packages/src
+RUN git clone -b iron https://github.com/ros-perception/vision_opencv.git
+RUN mv vision_opencv/cv_bridge/ .
+RUN rm -r vision_opencv/
+RUN git clone -b ros2 https://github.com/ros-drivers/zbar_ros.git
+RUN git clone -b iron https://github.com/ros-perception/image_common.git
+RUN git clone -b iron https://github.com/ros-perception/image_transport_plugins.git
+
+RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && rosdep update"
+RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && rosdep install --from-paths zbar_ros --ignore-src -y"
+RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && rosdep install --from-paths image_common --ignore-src -y"
+RUN apt install -y --no-install-recommends libogg-dev libtheora-dev
+# RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && rosdep install --from-paths image_transport_plugins --ignore-src -y"
+RUN /bin/bash -c "source /opt/ros/iron/install/setup.bash && cd /additional_packages && colcon build"
+RUN git clone -b 0.7.0 https://github.com/ros-drivers/usb_cam.git
+RUN /bin/bash -c "source /additional_packages/install/setup.bash && rosdep install --from-paths usb_cam --ignore-src -y"
+RUN /bin/bash -c "source /additional_packages/install/setup.bash && cd /additional_packages && colcon build"
+
+RUN echo 'source /additional_packages/install/setup.bash' >> /root/.bashrc
+
+WORKDIR /welt_auv
+CMD ["bash"]
