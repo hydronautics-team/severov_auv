@@ -7,6 +7,6 @@ RUN /bin/bash -c "source /additional_packages/install/setup.bash && /severov_auv
 
 RUN echo 'source /severov_auv/install/setup.bash' >> /root/.bashrc
 
-ENTRYPOINT [ "/severov_auv/run_vision.sh" ]
+# ENTRYPOINT [ "/severov_auv/run_vision.sh" ]
 
 CMD ["bash"]
