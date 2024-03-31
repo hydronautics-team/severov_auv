@@ -3,5 +3,6 @@ docker run --rm -it --gpus all \
     --device=/dev/ttyTHS0 \
     --ipc=host \
     --net=host \
+    --user root \
     hydronautics/severov_auv:control \
     bash
